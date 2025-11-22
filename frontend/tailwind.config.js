@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       colors: {
-        primary: "#00E5FF", // Neon Cyan
+        primary: "#2f8d4d", // FX Green
         secondary: "#0F172A", // Dark Slate
         accent: "#FF1493", // Neon Pink
         dark: {

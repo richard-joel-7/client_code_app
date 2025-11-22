@@ -123,7 +123,7 @@ export default function MarketingDashboard() {
                 {/* Stats / Hero Section */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-primary/20"></div>
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/30 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-primary/40"></div>
                         <h3 className="text-gray-400 text-sm font-medium mb-2">Clients</h3>
                         <div className="text-4xl font-bold text-white">{new Set((projects || []).map(p => p.client_code)).size}</div>
                     </motion.div>
