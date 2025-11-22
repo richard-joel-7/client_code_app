@@ -12,6 +12,7 @@ app = FastAPI(title="Phantom FX Marketing Tool")
 origins = [
     "http://localhost:5173",
     "http://localhost:3000",
+    "*", # Allow all origins for production (Vercel)
 ]
 
 app.add_middleware(
