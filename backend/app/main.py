@@ -12,12 +12,14 @@ app = FastAPI(title="Phantom FX Marketing Tool")
 origins = [
     "http://localhost:5173",
     "http://localhost:3000",
-    "*", # Allow all origins for production (Vercel)
+    "https://client-code-app.vercel.app", # Exact Vercel URL
 ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex="https://.*\.vercel\.app", # Allow all Vercel subdomains
+    allow_credentials=True,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
