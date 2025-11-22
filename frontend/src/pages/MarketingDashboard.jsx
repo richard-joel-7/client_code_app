@@ -5,7 +5,7 @@ import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import ProjectModal from "../components/ProjectModal";
 import api from "../lib/api";
-import { Plus, LogOut, Search, Download, Edit2 } from "lucide-react";
+import { Plus, LogOut, Search, Download, Edit2, FileText } from "lucide-react";
 import { motion } from "framer-motion";
 
 const logo = "/pixoo-black-logo.png";
@@ -91,22 +91,28 @@ export default function MarketingDashboard() {
         <div className="min-h-screen bg-dark-900 text-gray-100 font-sans selection:bg-primary/30">
             {/* Top Bar */}
             <header className="border-b border-white/10 bg-dark-800/50 backdrop-blur-md sticky top-0 z-40">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="bg-white/5 p-2 rounded-lg border border-white/10">
-                            <img src={logo} alt="PhantomFX" className="h-6" />
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-auto md:h-16 py-4 md:py-0 flex flex-col md:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-white/5 p-2 rounded-lg border border-white/10">
+                                <img src={logo} alt="PhantomFX" className="h-6" />
+                            </div>
+                            <div className="h-6 w-px bg-white/10 mx-2"></div>
+                            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
+                                Marketing <span className="text-primary">Hub</span>
+                            </h1>
                         </div>
-                        <div className="h-6 w-px bg-white/10 mx-2"></div>
-                        <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-400">
-                            Marketing <span className="text-primary">Hub</span>
-                        </h1>
+                        {/* Mobile Logout */}
+                        <button onClick={handleLogout} className="md:hidden p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white">
+                            <LogOut size={20} />
+                        </button>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/10">
+                    <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full border border-white/10 w-full md:w-auto justify-center">
                             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
                             <span className="text-xs font-medium text-gray-300">Welcome, <span className="text-white font-bold">{user?.username}</span></span>
                         </div>
-                        <button onClick={handleLogout} className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white">
+                        <button onClick={handleLogout} className="hidden md:block p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white">
                             <LogOut size={20} />
                         </button>
                     </div>
@@ -121,7 +127,12 @@ export default function MarketingDashboard() {
                 )}
 
                 {/* Stats / Hero Section */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-emerald-500/20"></div>
+                        <h3 className="text-gray-400 text-sm font-medium mb-2">Total Projects</h3>
+                        <div className="text-4xl font-bold text-white">{(projects || []).length}</div>
+                    </motion.div>
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-24 h-24 bg-primary/30 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-primary/40"></div>
                         <h3 className="text-gray-400 text-sm font-medium mb-2">Clients</h3>

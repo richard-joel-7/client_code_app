@@ -4,13 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
-import { Lock, User, ArrowRight } from "lucide-react";
+import { Lock, User, ArrowRight, Eye, EyeOff } from "lucide-react";
 
 const logo = "/pixoo-black-logo.png";
 
 export default function Login() {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState("");
     const { login } = useAuth();
     const navigate = useNavigate();
@@ -73,12 +74,19 @@ export default function Login() {
                         <div className="relative group">
                             <Lock className="absolute left-4 top-3.5 h-5 w-5 text-gray-500 group-focus-within:text-primary transition-colors" />
                             <Input
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 placeholder="Password"
-                                className="pl-12"
+                                className="pl-12 pr-12"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-3.5 text-gray-500 hover:text-white transition-colors"
+                            >
+                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
                         </div>
                     </div>
 
