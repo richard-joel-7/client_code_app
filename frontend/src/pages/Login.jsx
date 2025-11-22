@@ -25,6 +25,7 @@ export default function Login() {
             else if (role === "team3") navigate("/team3");
             else navigate("/");
         } catch (err) {
+            console.error("Login Error:", err);
             setError("Invalid credentials");
         }
     };
