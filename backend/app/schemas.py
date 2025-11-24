@@ -65,3 +65,8 @@ class MasterResponse(BaseModel):
 
 class ClientCodePreview(BaseModel):
     client_code: str
+
+class ClientDetailsResponse(BaseModel):
+    region: Optional[str] = None
+    territory: Optional[str] = None
+    country: Optional[str] = None

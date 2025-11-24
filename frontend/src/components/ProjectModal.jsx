@@ -74,6 +74,39 @@ export default function ProjectModal({ isOpen, onClose, project, onSave }) {
         return () => clearTimeout(timeoutId);
     }, [formData.client_name, formData.region, formData.territory, formData.misc_info, isOpen, project]);
 
+    // Autofill effect
+    useEffect(() => {
+        const fetchDetails = async () => {
+            if (!formData.client_name || !formData.misc_info || project) return;
+
+            try {
+                const res = await api.get("/marketing/client-details", {
+                    params: {
+                        client_name: formData.client_name,
+                        misc_info: formData.misc_info
+                    }
+                });
+
+                if (res.data && (res.data.region || res.data.territory || res.data.country)) {
+                    setFormData(prev => ({
+                        ...prev,
+                        region: res.data.region || prev.region,
+                        territory: res.data.territory || prev.territory,
+                        country: res.data.country || prev.country
+                    }));
+                }
+            } catch (err) {
+                console.error("Autofill failed", err);
+            }
+        };
+
+        const timeoutId = setTimeout(() => {
+            if (isOpen) fetchDetails();
+        }, 500);
+
+        return () => clearTimeout(timeoutId);
+    }, [formData.client_name, formData.misc_info, isOpen, project]);
+
     useEffect(() => {
         const validateFields = async () => {
             if (!formData.project_name && !formData.show_code) return;

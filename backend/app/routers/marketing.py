@@ -215,3 +215,25 @@ def validate_project(
             errors["show_code"] = "Show Code already exists"
             
     return {"errors": errors}
+
+@router.get("/client-details", response_model=schemas.ClientDetailsResponse)
+def get_client_details(
+    client_name: str,
+    misc_info: str,
+    db: Session = Depends(database.get_db)
+):
+    # Find the most recent project with this client_name and misc_info
+    # We order by master_id desc to get the latest one
+    existing = db.query(models.Master).filter(
+        models.Master.client_name == client_name,
+        models.Master.misc_info == misc_info
+    ).order_by(models.Master.master_id.desc()).first()
+    
+    if existing:
+        return {
+            "region": existing.region,
+            "territory": existing.territory,
+            "country": existing.country
+        }
+    
+    return {}
