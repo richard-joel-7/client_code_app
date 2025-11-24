@@ -59,6 +59,7 @@ def create_project(project: schemas.ProjectCreate, db: Session = Depends(databas
         source=project.source,
         brand=project.brand,
         country=project.country,
+        creation_mode=project.creation_mode,
         created_by=current_user.username
     )
     db.add(new_master)
@@ -176,6 +177,10 @@ def export_projects(db: Session = Depends(database.get_db)):
     data = [p.__dict__ for p in projects]
     for d in data:
         d.pop('_sa_instance_state', None)
+        d.pop('created_at', None)
+        d.pop('created_by', None)
+        d.pop('updated_at', None)
+        d.pop('updated_by', None)
     
     df = pd.DataFrame(data)
     stream = BytesIO()
@@ -237,3 +242,17 @@ def get_client_details(
         }
     
     return {}
+
+@router.get("/clients/names", response_model=List[str])
+def get_client_names(db: Session = Depends(database.get_db)):
+    # Get unique client names from Client table
+    clients = db.query(models.Client.client_name).distinct().all()
+    return [c[0] for c in clients]
+
+@router.get("/clients/misc-infos", response_model=List[str])
+def get_client_misc_infos(client_name: str, db: Session = Depends(database.get_db)):
+    # Get unique misc_infos for a specific client
+    infos = db.query(models.Client.misc_info).filter(
+        models.Client.client_name == client_name
+    ).distinct().all()
+    return [i[0] for i in infos]

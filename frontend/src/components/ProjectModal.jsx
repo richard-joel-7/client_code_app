@@ -6,7 +6,7 @@ import { Select } from "../components/ui/Select";
 import { X, Sparkles, RefreshCw } from "lucide-react";
 import api from "../lib/api";
 
-export default function ProjectModal({ isOpen, onClose, project, onSave }) {
+export default function ProjectModal({ isOpen, onClose, project, onSave, mode = 'new' }) {
     const [formData, setFormData] = useState({
         client_name: "",
         region: "",
@@ -23,6 +23,10 @@ export default function ProjectModal({ isOpen, onClose, project, onSave }) {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
     const [previewError, setPreviewError] = useState("");
+
+    // Dropdown options for Existing Client mode
+    const [clientNames, setClientNames] = useState([]);
+    const [miscInfos, setMiscInfos] = useState([]);
 
     useEffect(() => {
         if (project) {
@@ -44,6 +48,40 @@ export default function ProjectModal({ isOpen, onClose, project, onSave }) {
             setPreviewCode("");
         }
     }, [project, isOpen]);
+
+    // Fetch Client Names when opening in 'existing' mode
+    useEffect(() => {
+        if (isOpen && mode === 'existing' && !project) {
+            const fetchClients = async () => {
+                try {
+                    const res = await api.get("/marketing/clients/names");
+                    setClientNames(res.data.map(name => ({ value: name, label: name })));
+                } catch (err) {
+                    console.error("Failed to fetch client names", err);
+                }
+            };
+            fetchClients();
+        }
+    }, [isOpen, mode, project]);
+
+    // Fetch Misc Infos when Client Name changes in 'existing' mode
+    useEffect(() => {
+        if (isOpen && mode === 'existing' && formData.client_name && !project) {
+            const fetchInfos = async () => {
+                try {
+                    const res = await api.get("/marketing/clients/misc-infos", {
+                        params: { client_name: formData.client_name }
+                    });
+                    setMiscInfos(res.data.map(info => ({ value: info, label: info })));
+                } catch (err) {
+                    console.error("Failed to fetch misc infos", err);
+                }
+            };
+            fetchInfos();
+        } else {
+            setMiscInfos([]);
+        }
+    }, [formData.client_name, isOpen, mode, project]);
 
     const fetchPreview = async () => {
         if (!formData.client_name) return;
@@ -147,7 +185,8 @@ export default function ProjectModal({ isOpen, onClose, project, onSave }) {
         setLoading(true);
         setError("");
         try {
-            await onSave(formData);
+            const payload = { ...formData, creation_mode: mode === 'existing' ? 'Existing Client' : 'New Client' };
+            await onSave(payload);
             onClose();
         } catch (err) {
             setError(err.response?.data?.detail || "Failed to save project");
@@ -167,13 +206,13 @@ export default function ProjectModal({ isOpen, onClose, project, onSave }) {
                     exit={{ opacity: 0, scale: 0.9, y: 20 }}
                     className="glass-panel rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto border border-white/10 shadow-2xl shadow-primary/10"
                 >
-                    <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5 sticky top-0 backdrop-blur-md z-10">
+                    <div className="p-6 border-b border-white/10 flex justify-between items-center bg-dark-900 sticky top-0 z-10">
                         <div className="flex items-center gap-3">
                             <div className="p-2 bg-primary/10 rounded-lg">
                                 <Sparkles className="w-5 h-5 text-primary" />
                             </div>
                             <h2 className="text-xl font-bold text-white">
-                                {project ? "Edit Project" : "Create New Project"}
+                                {project ? "Edit Project" : (mode === 'existing' ? "New Project (Existing Client)" : "New Project (New Client)")}
                             </h2>
                         </div>
                         <button onClick={onClose} className="text-gray-400 hover:text-white transition-colors p-2 hover:bg-white/10 rounded-full">
@@ -183,7 +222,32 @@ export default function ProjectModal({ isOpen, onClose, project, onSave }) {
 
                     <form onSubmit={handleSubmit} className="p-8 space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <Input label="Client Name" name="client_name" value={formData.client_name} onChange={handleChange} required placeholder="e.g. Acme Corp" />
+                            {mode === 'existing' && !project ? (
+                                <>
+                                    <Select
+                                        label="Client Name"
+                                        options={clientNames}
+                                        value={formData.client_name}
+                                        onChange={(e) => handleChange({ target: { name: "client_name", value: e.target.value } })}
+                                        required
+                                        placeholder="Select Client"
+                                    />
+                                    <Select
+                                        label="Misc Info"
+                                        options={miscInfos}
+                                        value={formData.misc_info}
+                                        onChange={(e) => handleChange({ target: { name: "misc_info", value: e.target.value } })}
+                                        required
+                                        placeholder="Select Misc Info"
+                                        disabled={!formData.client_name}
+                                    />
+                                </>
+                            ) : (
+                                <>
+                                    <Input label="Client Name" name="client_name" value={formData.client_name} onChange={handleChange} required placeholder="e.g. Acme Corp" />
+                                    <Input label="Misc Info" name="misc_info" value={formData.misc_info} onChange={handleChange} required placeholder="Individual" />
+                                </>
+                            )}
 
                             <Select
                                 label="Region"

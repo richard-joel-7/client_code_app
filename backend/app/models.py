@@ -47,7 +47,8 @@ class Master(Base):
     client_code = Column(String, nullable=False) # Not unique in Master? Multiple projects can share client code? Yes.
     source = Column(String, nullable=True)
     brand = Column(String, nullable=True)
-    country = Column(String, nullable=False)
+    country = Column(String, nullable=True)
+    creation_mode = Column(String, nullable=True) # 'New Client' or 'Existing Client'
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     created_by = Column(String, nullable=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)

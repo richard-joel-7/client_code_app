@@ -29,6 +29,7 @@ class ProjectCreate(BaseModel):
     source: Optional[str] = None
     brand: Optional[str] = None
     country: str
+    creation_mode: Optional[str] = "New Client"
 
 class ProjectUpdate(BaseModel):
     client_name: Optional[str] = None
@@ -55,6 +56,7 @@ class MasterResponse(BaseModel):
     source: Optional[str] = None
     brand: Optional[str] = None
     country: Optional[str] = None
+    creation_mode: Optional[str] = None
     created_at: Optional[datetime] = None
     created_by: Optional[str] = None
     updated_at: Optional[datetime] = None

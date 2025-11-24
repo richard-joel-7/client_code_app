@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import ProjectModal from "../components/ProjectModal";
+import ClientTypeModal from "../components/ClientTypeModal";
 import api from "../lib/api";
 import { Plus, LogOut, Search, Download, Edit2, FileText } from "lucide-react";
 import { motion } from "framer-motion";
@@ -15,25 +16,38 @@ export default function MarketingDashboard() {
     const navigate = useNavigate();
     const [projects, setProjects] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [clientTypeModalOpen, setClientTypeModalOpen] = useState(false);
+    const [projectModalMode, setProjectModalMode] = useState('new');
     const [editingProject, setEditingProject] = useState(null);
     const [search, setSearch] = useState("");
     const [filterBrand, setFilterBrand] = useState(null);
+    const [filterRegion, setFilterRegion] = useState(null);
+    const [filterCreationMode, setFilterCreationMode] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
     useEffect(() => {
         fetchProjects();
-    }, [search, filterBrand]);
+    }, [search, filterBrand, filterRegion, filterCreationMode]);
 
     const fetchProjects = async () => {
         try {
             setError("");
             const params = {};
             if (search) params.client_name = search;
-            if (filterBrand) params.brand = filterBrand;
+            // We will filter other things client-side for now as API doesn't support all yet
+            // or we can add support. But for KPIs, client side filtering of the main list 
+            // might be confusing if the main list is paginated. 
+            // Assuming get all for now.
+
             const res = await api.get("/marketing/projects", { params });
             if (Array.isArray(res.data)) {
-                setProjects(res.data);
+                let filtered = res.data;
+                if (filterBrand) filtered = filtered.filter(p => p.brand === filterBrand);
+                if (filterRegion) filtered = filtered.filter(p => p.region === filterRegion);
+                if (filterCreationMode) filtered = filtered.filter(p => p.creation_mode === filterCreationMode);
+
+                setProjects(filtered);
             } else {
                 setProjects([]);
                 console.error("API returned non-array data:", res.data);
@@ -63,11 +77,18 @@ export default function MarketingDashboard() {
 
     const handleEdit = (project) => {
         setEditingProject(project);
+        setProjectModalMode('new'); // Editing always uses input fields
         setIsModalOpen(true);
     };
 
     const handleCreate = () => {
         setEditingProject(null);
+        setClientTypeModalOpen(true);
+    };
+
+    const handleClientTypeSelect = (type) => {
+        setClientTypeModalOpen(false);
+        setProjectModalMode(type);
         setIsModalOpen(true);
     };
 
@@ -127,34 +148,72 @@ export default function MarketingDashboard() {
                 )}
 
                 {/* Stats / Hero Section */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-10">
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-emerald-500/20"></div>
-                        <h3 className="text-gray-400 text-sm font-medium mb-2">Total Projects</h3>
-                        <div className="text-4xl font-bold text-white">{(projects || []).length}</div>
-                    </motion.div>
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-primary/30 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-primary/40"></div>
-                        <h3 className="text-gray-400 text-sm font-medium mb-2">Clients</h3>
-                        <div className="text-4xl font-bold text-white">{new Set((projects || []).map(p => p.client_code)).size}</div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
+                    {/* Card 1: Total Projects */}
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-panel p-5 rounded-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-emerald-500/20"></div>
+                        <h3 className="text-gray-400 text-xs font-medium mb-1 uppercase tracking-wider">Total Projects</h3>
+                        <div className="text-3xl font-bold text-white">{(projects || []).length}</div>
                     </motion.div>
 
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-blue-500/20"></div>
-                        <h3 className="text-gray-400 text-sm font-medium mb-2">Global Clients</h3>
-                        <div className="text-4xl font-bold text-white">{new Set((projects || []).filter(p => p.region === 'Global').map(p => p.client_code)).size}</div>
+                    {/* Card 2: Total Clients */}
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-panel p-5 rounded-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-primary/20 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-primary/30"></div>
+                        <h3 className="text-gray-400 text-xs font-medium mb-1 uppercase tracking-wider">Total Clients</h3>
+                        <div className="text-3xl font-bold text-white">{new Set((projects || []).map(p => p.client_name)).size}</div>
                     </motion.div>
 
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-orange-500/20"></div>
-                        <h3 className="text-gray-400 text-sm font-medium mb-2">India Clients</h3>
-                        <div className="text-4xl font-bold text-white">{new Set((projects || []).filter(p => p.region === 'India').map(p => p.client_code)).size}</div>
+                    {/* Card 3: Region Filter */}
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="glass-panel p-5 rounded-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-blue-500/20"></div>
+                        <h3 className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">Region</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {['Global', 'India'].map(region => {
+                                const count = (projects || []).filter(p => p.region === region).length;
+                                return (
+                                    <button
+                                        key={region}
+                                        onClick={() => setFilterRegion(filterRegion === region ? null : region)}
+                                        className={`text-[10px] px-2 py-1 rounded border transition-all ${filterRegion === region
+                                            ? "bg-blue-500 text-white border-blue-500 font-bold"
+                                            : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
+                                            }`}
+                                    >
+                                        {region}: {count}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </motion.div>
 
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-purple-500/20"></div>
-                        <h3 className="text-gray-400 text-sm font-medium mb-2">Brands</h3>
-                        <div className="flex flex-wrap gap-2 mt-2">
+                    {/* Card 4: Project From Filter */}
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="glass-panel p-5 rounded-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-orange-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-orange-500/20"></div>
+                        <h3 className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">Project From</h3>
+                        <div className="flex flex-wrap gap-2">
+                            {['New Client', 'Existing Client'].map(mode => {
+                                const count = (projects || []).filter(p => p.creation_mode === mode).length;
+                                return (
+                                    <button
+                                        key={mode}
+                                        onClick={() => setFilterCreationMode(filterCreationMode === mode ? null : mode)}
+                                        className={`text-[10px] px-2 py-1 rounded border transition-all ${filterCreationMode === mode
+                                            ? "bg-orange-500 text-white border-orange-500 font-bold"
+                                            : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
+                                            }`}
+                                    >
+                                        {mode}: {count}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </motion.div>
+
+                    {/* Card 5: Brands Filter */}
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-panel p-5 rounded-2xl relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-purple-500/20"></div>
+                        <h3 className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">Brands</h3>
+                        <div className="flex flex-wrap gap-2 max-h-20 overflow-y-auto custom-scrollbar">
                             {Object.entries((projects || []).reduce((acc, p) => {
                                 const b = p.brand || "Unknown";
                                 acc[b] = (acc[b] || 0) + 1;
@@ -163,8 +222,8 @@ export default function MarketingDashboard() {
                                 <button
                                     key={brand}
                                     onClick={() => setFilterBrand(brand === filterBrand ? null : brand)}
-                                    className={`text-xs px-2 py-1 rounded-md border transition-all ${filterBrand === brand
-                                        ? "bg-primary text-black border-primary font-bold"
+                                    className={`text-[10px] px-2 py-1 rounded border transition-all ${filterBrand === brand
+                                        ? "bg-purple-500 text-white border-purple-500 font-bold"
                                         : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
                                         }`}
                                 >
@@ -259,6 +318,13 @@ export default function MarketingDashboard() {
                 onClose={() => setIsModalOpen(false)}
                 project={editingProject}
                 onSave={handleSave}
+                mode={projectModalMode}
+            />
+
+            <ClientTypeModal
+                isOpen={clientTypeModalOpen}
+                onClose={() => setClientTypeModalOpen(false)}
+                onSelect={handleClientTypeSelect}
             />
         </div>
     );
