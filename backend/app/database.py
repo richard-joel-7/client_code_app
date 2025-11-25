@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.pool import NullPool
 import os
 
 # In a real app, use environment variables. For this demo, we default to the user provided URL.
@@ -11,15 +12,13 @@ SQLALCHEMY_DATABASE_URL = os.getenv(
 )
 
 # Configure connection pooling to avoid "MaxClientsInSessionMode" errors
-# Supabase Transaction Pooler has a limit (e.g., 15-20 connections).
-# We limit our app to 5 connections + 0 overflow to stay safe.
+# We use NullPool to disable application-side pooling entirely.
+# This ensures connections are closed immediately after use, preventing idle connections
+# from consuming the limited Supabase slots (especially during deployments).
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
-    pool_size=5,            # Keep only 5 connections open
-    max_overflow=0,         # Do NOT allow any overflow connections
-    pool_timeout=30,        # Wait 30s for a connection before failing
-    pool_recycle=1800,      # Recycle connections every 30 mins
-    pool_pre_ping=True      # Check connection health before using
+    poolclass=NullPool,
+    pool_pre_ping=True
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
