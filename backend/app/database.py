@@ -11,6 +11,13 @@ SQLALCHEMY_DATABASE_URL = os.getenv(
     "postgresql+psycopg2://postgres:postgres@localhost:5432/team_portal"
 )
 
+# FIX: Automatically switch to Transaction Pooler (Port 6543) for Supabase
+# The "MaxClientsInSessionMode" error happens because port 5432 is the Session Pooler (limited connections).
+# Port 6543 is the Transaction Pooler (thousands of connections).
+if "pooler.supabase.com" in SQLALCHEMY_DATABASE_URL and ":5432" in SQLALCHEMY_DATABASE_URL:
+    print("⚠️ Detected Supabase Session Pooler (5432). Switching to Transaction Pooler (6543) to fix connection limits.")
+    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace(":5432", ":6543")
+
 # Configure connection pooling to avoid "MaxClientsInSessionMode" errors
 # We use NullPool to disable application-side pooling entirely.
 # This ensures connections are closed immediately after use, preventing idle connections
