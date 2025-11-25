@@ -6,7 +6,7 @@ import { Input } from "../components/ui/Input";
 import ProjectModal from "../components/ProjectModal";
 import ClientTypeModal from "../components/ClientTypeModal";
 import api from "../lib/api";
-import { Plus, LogOut, Search, Download, Edit2, FileText } from "lucide-react";
+import { Plus, LogOut, Search, Download, Edit2, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 
 const logo = "/pixoo-black-logo.png";
@@ -14,10 +14,13 @@ const logo = "/pixoo-black-logo.png";
 export default function MarketingDashboard() {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+
+    // State
     const [projects, setProjects] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [allProjects, setAllProjects] = useState([]); // Store all projects for KPIs
     const [clientTypeModalOpen, setClientTypeModalOpen] = useState(false);
     const [projectModalMode, setProjectModalMode] = useState('new');
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProject, setEditingProject] = useState(null);
     const [search, setSearch] = useState("");
     const [filterBrand, setFilterBrand] = useState(null);
@@ -26,39 +29,54 @@ export default function MarketingDashboard() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
+    // Initial Fetch
     useEffect(() => {
         fetchProjects();
-    }, [search, filterBrand, filterRegion, filterCreationMode]);
+    }, []);
+
+    // Apply Filters
+    useEffect(() => {
+        applyFilters();
+    }, [search, filterBrand, filterRegion, filterCreationMode, allProjects]);
 
     const fetchProjects = async () => {
         try {
             setError("");
-            const params = {};
-            if (search) params.client_name = search;
-            // We will filter other things client-side for now as API doesn't support all yet
-            // or we can add support. But for KPIs, client side filtering of the main list 
-            // might be confusing if the main list is paginated. 
-            // Assuming get all for now.
-
-            const res = await api.get("/marketing/projects", { params });
+            setLoading(true);
+            const res = await api.get("/marketing/projects");
             if (Array.isArray(res.data)) {
-                let filtered = res.data;
-                if (filterBrand) filtered = filtered.filter(p => p.brand === filterBrand);
-                if (filterRegion) filtered = filtered.filter(p => p.region === filterRegion);
-                if (filterCreationMode) filtered = filtered.filter(p => p.creation_mode === filterCreationMode);
-
-                setProjects(filtered);
+                setAllProjects(res.data);
+                setProjects(res.data); // Initially, filtered list is same as all
             } else {
+                setAllProjects([]);
                 setProjects([]);
                 console.error("API returned non-array data:", res.data);
             }
         } catch (err) {
             console.error("Failed to fetch projects", err);
             setError("Failed to load projects. Please try again.");
+            setAllProjects([]);
             setProjects([]);
         } finally {
             setLoading(false);
         }
+    };
+
+    const applyFilters = () => {
+        let filtered = [...allProjects];
+
+        if (search) {
+            const lowerSearch = search.toLowerCase();
+            filtered = filtered.filter(p =>
+                (p.client_name && p.client_name.toLowerCase().includes(lowerSearch)) ||
+                (p.client_code && p.client_code.toLowerCase().includes(lowerSearch))
+            );
+        }
+        if (filterBrand) filtered = filtered.filter(p => p.brand === filterBrand);
+        if (filterRegion) filtered = filtered.filter(p => p.region === filterRegion);
+        if (filterCreationMode) filtered = filtered.filter(p => p.creation_mode === filterCreationMode);
+
+        setProjects(filtered);
     };
 
     const handleLogout = () => {
@@ -66,29 +84,36 @@ export default function MarketingDashboard() {
         navigate("/login");
     };
 
-    const handleSave = async (data) => {
-        if (editingProject) {
-            await api.put(`/marketing/projects/${editingProject.master_id}`, data);
-        } else {
-            await api.post("/marketing/projects", data);
+    const handleSave = async (projectData) => {
+        try {
+            if (editingProject) {
+                await api.put(`/marketing/projects/${editingProject.project_id}`, projectData);
+            } else {
+                await api.post("/marketing/projects", projectData);
+            }
+            fetchProjects(); // Re-fetch to get updated list
+            setIsModalOpen(false);
+            setEditingProject(null);
+        } catch (err) {
+            console.error("Failed to save project", err);
+            throw err;
         }
-        fetchProjects();
-    };
-
-    const handleEdit = (project) => {
-        setEditingProject(project);
-        setProjectModalMode('new'); // Editing always uses input fields
-        setIsModalOpen(true);
     };
 
     const handleCreate = () => {
-        setEditingProject(null);
         setClientTypeModalOpen(true);
     };
 
-    const handleClientTypeSelect = (type) => {
+    const handleClientTypeSelect = (mode) => {
         setClientTypeModalOpen(false);
-        setProjectModalMode(type);
+        setProjectModalMode(mode);
+        setEditingProject(null);
+        setIsModalOpen(true);
+    };
+
+    const handleEdit = (project) => {
+        setProjectModalMode('existing'); // Editing is always effectively 'existing' context
+        setEditingProject(project);
         setIsModalOpen(true);
     };
 
@@ -142,9 +167,10 @@ export default function MarketingDashboard() {
 
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
                 {error && (
-                    <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-2">
-                        <span>⚠️</span> {error}
-                    </div>
+                    <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5" />
+                        {error}
+                    </motion.div>
                 )}
 
                 {/* Stats / Hero Section */}
@@ -153,14 +179,14 @@ export default function MarketingDashboard() {
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-panel p-5 rounded-2xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-emerald-500/20"></div>
                         <h3 className="text-gray-400 text-xs font-medium mb-1 uppercase tracking-wider">Total Projects</h3>
-                        <div className="text-3xl font-bold text-white">{(projects || []).length}</div>
+                        <div className="text-3xl font-bold text-white">{(allProjects || []).length}</div>
                     </motion.div>
 
                     {/* Card 2: Total Clients */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-panel p-5 rounded-2xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-20 h-20 bg-primary/20 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-primary/30"></div>
                         <h3 className="text-gray-400 text-xs font-medium mb-1 uppercase tracking-wider">Total Clients</h3>
-                        <div className="text-3xl font-bold text-white">{new Set((projects || []).map(p => p.client_name)).size}</div>
+                        <div className="text-3xl font-bold text-white">{new Set((allProjects || []).map(p => p.client_name)).size}</div>
                     </motion.div>
 
                     {/* Card 3: Region Filter */}
@@ -169,7 +195,7 @@ export default function MarketingDashboard() {
                         <h3 className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">Region</h3>
                         <div className="flex flex-wrap gap-2">
                             {['Global', 'India'].map(region => {
-                                const count = (projects || []).filter(p => p.region === region).length;
+                                const count = (allProjects || []).filter(p => p.region === region).length;
                                 return (
                                     <button
                                         key={region}
@@ -192,7 +218,7 @@ export default function MarketingDashboard() {
                         <h3 className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">Project From</h3>
                         <div className="flex flex-wrap gap-2">
                             {['New Client', 'Existing Client'].map(mode => {
-                                const count = (projects || []).filter(p => p.creation_mode === mode).length;
+                                const count = (allProjects || []).filter(p => p.creation_mode === mode).length;
                                 return (
                                     <button
                                         key={mode}
@@ -214,7 +240,7 @@ export default function MarketingDashboard() {
                         <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-purple-500/20"></div>
                         <h3 className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">Brands</h3>
                         <div className="flex flex-wrap gap-2 max-h-20 overflow-y-auto custom-scrollbar">
-                            {Object.entries((projects || []).reduce((acc, p) => {
+                            {Object.entries((allProjects || []).reduce((acc, p) => {
                                 const b = p.brand || "Unknown";
                                 acc[b] = (acc[b] || 0) + 1;
                                 return acc;

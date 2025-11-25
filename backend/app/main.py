@@ -30,3 +30,7 @@ app.include_router(marketing.router)
 @app.get("/api/health")
 def health_check():
     return {"status": "ok"}
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to Phantom FX Marketing Tool API"}
