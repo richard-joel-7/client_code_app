@@ -28,6 +28,20 @@ export default function ProjectModal({ isOpen, onClose, project, onSave, mode = 
     const [clientNames, setClientNames] = useState([]);
     const [miscInfos, setMiscInfos] = useState([]);
 
+    // Options
+    const regionOptions = [
+        { value: "Domestic", label: "Domestic" },
+        { value: "International", label: "International" }
+    ];
+
+    const territoryOptions = {
+        "Domestic": ["Chennai", "Hyderabad", "Mumbai", "Bangalore"],
+        "International": ["USA", "UK", "Canada", "Europe", "China", "Others"]
+    };
+
+    const miscInfoOptions = ["ID", "TS", "NX", "SP", "MK", "00"];
+    const brandOptions = ["PFX", "Milk", "Spectre", "Lola", "Tippet"];
+
     useEffect(() => {
         if (project) {
             setFormData(project);
@@ -177,7 +191,15 @@ export default function ProjectModal({ isOpen, onClose, project, onSave, mode = 
     }, [formData.project_name, formData.show_code, isOpen]);
 
     const handleChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+        const { name, value } = e.target;
+        setFormData(prev => {
+            const updates = { ...prev, [name]: value };
+            // Reset territory if region changes
+            if (name === 'region') {
+                updates.territory = "";
+            }
+            return updates;
+        });
     };
 
     const handleSubmit = async (e) => {
@@ -185,7 +207,11 @@ export default function ProjectModal({ isOpen, onClose, project, onSave, mode = 
         setLoading(true);
         setError("");
         try {
-            const payload = { ...formData, creation_mode: mode === 'existing' ? 'Existing Client' : 'New Client' };
+            const payload = {
+                ...formData,
+                creation_mode: mode === 'existing' ? 'Existing Client' : 'New Client',
+                client_code: previewCode // Send the previewed code to backend
+            };
             await onSave(payload);
             onClose();
         } catch (err) {
@@ -196,6 +222,9 @@ export default function ProjectModal({ isOpen, onClose, project, onSave, mode = 
     };
 
     if (!isOpen) return null;
+
+    // Determine Territory Options based on selected Region
+    const currentTerritoryOptions = formData.region ? territoryOptions[formData.region] || [] : [];
 
     return (
         <AnimatePresence>
@@ -245,29 +274,50 @@ export default function ProjectModal({ isOpen, onClose, project, onSave, mode = 
                             ) : (
                                 <>
                                     <Input label="Client Name" name="client_name" value={formData.client_name} onChange={handleChange} required placeholder="e.g. Acme Corp" />
-                                    <Input label="Misc Info" name="misc_info" value={formData.misc_info} onChange={handleChange} required placeholder="Individual" />
+                                    <Select
+                                        label="Misc Info"
+                                        options={miscInfoOptions.map(o => ({ value: o, label: o }))}
+                                        value={formData.misc_info}
+                                        onChange={(e) => handleChange({ target: { name: "misc_info", value: e.target.value } })}
+                                        required
+                                        placeholder="Select Misc Info"
+                                    />
                                 </>
                             )}
 
                             <Select
                                 label="Region"
-                                options={[
-                                    { value: "Global", label: "Global" },
-                                    { value: "India", label: "India" }
-                                ]}
+                                options={regionOptions}
                                 value={formData.region}
                                 onChange={(e) => handleChange({ target: { name: "region", value: e.target.value } })}
                                 required
+                                placeholder="Select Region"
                             />
 
-                            <Input label="Territory" name="territory" value={formData.territory} onChange={handleChange} required placeholder="Chennai" />
+                            <Select
+                                label="Territory"
+                                options={currentTerritoryOptions.map(t => ({ value: t, label: t }))}
+                                value={formData.territory}
+                                onChange={(e) => handleChange({ target: { name: "territory", value: e.target.value } })}
+                                required
+                                placeholder="Select Territory"
+                                disabled={!formData.region}
+                            />
+
                             <Input label="Currency" name="currency" value={formData.currency} onChange={handleChange} required placeholder="e.g. USD" />
                             <Input label="Show Code" name="show_code" value={formData.show_code} onChange={handleChange} required placeholder="KRPU" />
                             <Input label="Project Name" name="project_name" value={formData.project_name} onChange={handleChange} required placeholder="e.g. Summer Campaign" />
-                            <Input label="Misc Info" name="misc_info" value={formData.misc_info} onChange={handleChange} required placeholder="Individual" />
+
                             <Input label="Country" name="country" value={formData.country} onChange={handleChange} required placeholder="e.g. USA" />
                             <Input label="Source" name="source" value={formData.source} onChange={handleChange} placeholder="EP name" />
-                            <Input label="Brand" name="brand" value={formData.brand} onChange={handleChange} placeholder="PFX" />
+
+                            <Select
+                                label="Brand"
+                                options={brandOptions.map(b => ({ value: b, label: b }))}
+                                value={formData.brand}
+                                onChange={(e) => handleChange({ target: { name: "brand", value: e.target.value } })}
+                                placeholder="Select Brand"
+                            />
                         </div>
 
                         <motion.div

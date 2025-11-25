@@ -30,6 +30,7 @@ class ProjectCreate(BaseModel):
     brand: Optional[str] = None
     country: str
     creation_mode: Optional[str] = "New Client"
+    client_code: Optional[str] = None
 
 class ProjectUpdate(BaseModel):
     client_name: Optional[str] = None

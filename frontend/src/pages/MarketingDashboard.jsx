@@ -225,7 +225,7 @@ export default function MarketingDashboard() {
                         <div className="absolute top-0 right-0 w-20 h-20 bg-blue-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-blue-500/20"></div>
                         <h3 className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">Region</h3>
                         <div className="flex flex-wrap gap-2">
-                            {['Global', 'India'].map(region => {
+                            {['International', 'Domestic'].map(region => {
                                 const count = getFilteredCount('region', region);
                                 return (
                                     <button

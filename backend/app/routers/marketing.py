@@ -23,13 +23,30 @@ def create_project(project: schemas.ProjectCreate, db: Session = Depends(databas
         raise HTTPException(status_code=400, detail="Project with this Show Code or Project Name already exists.")
 
     # 2. Generate client_code (or reuse)
-    client_code = logic.generate_unique_client_code(
-        db, 
-        project.client_name, 
-        project.region, 
-        project.territory, 
-        project.misc_info
-    )
+    client_code = None
+    
+    # If frontend sent a previewed code, try to use it
+    if project.client_code:
+        # Check if this code is already taken by a DIFFERENT client
+        # (If it's the same client, we should reuse the existing code anyway, which logic.generate... does)
+        collision = db.query(models.Client).filter(
+            models.Client.client_code == project.client_code
+        ).first()
+        
+        # If no collision, OR if collision is with the SAME client (name + misc_info match), use it
+        if not collision:
+            client_code = project.client_code
+        elif collision.client_name == project.client_name and collision.misc_info == project.misc_info:
+            client_code = collision.client_code
+            
+    if not client_code:
+        client_code = logic.generate_unique_client_code(
+            db, 
+            project.client_name, 
+            project.region, 
+            project.territory, 
+            project.misc_info
+        )
 
     # 3. Insert/Update Clients table
     existing_client = db.query(models.Client).filter(
