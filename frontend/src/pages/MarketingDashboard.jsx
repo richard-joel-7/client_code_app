@@ -67,14 +67,16 @@ export default function MarketingDashboard() {
 
         if (search) {
             const lowerSearch = search.toLowerCase();
-            filtered = filtered.filter(p =>
-                (p.client_name && p.client_name.toLowerCase().includes(lowerSearch)) ||
-                (p.client_code && p.client_code.toLowerCase().includes(lowerSearch))
-            );
+            filtered = filtered.filter(p => {
+                if (!p) return false;
+                const nameMatch = p.client_name && typeof p.client_name === 'string' && p.client_name.toLowerCase().includes(lowerSearch);
+                const codeMatch = p.client_code && typeof p.client_code === 'string' && p.client_code.toLowerCase().includes(lowerSearch);
+                return nameMatch || codeMatch;
+            });
         }
-        if (filterBrand) filtered = filtered.filter(p => p.brand === filterBrand);
-        if (filterRegion) filtered = filtered.filter(p => p.region === filterRegion);
-        if (filterCreationMode) filtered = filtered.filter(p => p.creation_mode === filterCreationMode);
+        if (filterBrand) filtered = filtered.filter(p => p && p.brand === filterBrand);
+        if (filterRegion) filtered = filtered.filter(p => p && p.region === filterRegion);
+        if (filterCreationMode) filtered = filtered.filter(p => p && p.creation_mode === filterCreationMode);
 
         setProjects(filtered);
     };
@@ -133,6 +135,35 @@ export default function MarketingDashboard() {
         }
     };
 
+    // Helper to calculate counts for filter buttons (Faceted Search Logic)
+    // Calculates how many results would exist if we selected a specific filter value,
+    // respecting all OTHER currently active filters.
+    const getFilteredCount = (field, value) => {
+        if (!allProjects) return 0;
+        return allProjects.filter(p => {
+            if (!p) return false; // Safety check
+
+            // 1. Search Filter
+            if (search) {
+                const lowerSearch = search.toLowerCase();
+                const nameMatch = p.client_name && typeof p.client_name === 'string' && p.client_name.toLowerCase().includes(lowerSearch);
+                const codeMatch = p.client_code && typeof p.client_code === 'string' && p.client_code.toLowerCase().includes(lowerSearch);
+
+                if (!nameMatch && !codeMatch) return false;
+            }
+
+            // 2. Apply all OTHER filters (skip the field we are currently counting for)
+            if (field !== 'brand' && filterBrand && p.brand !== filterBrand) return false;
+            if (field !== 'region' && filterRegion && p.region !== filterRegion) return false;
+            if (field !== 'creation_mode' && filterCreationMode && p.creation_mode !== filterCreationMode) return false;
+
+            // 3. Match the specific value for the field we are counting
+            if (p[field] !== value) return false;
+
+            return true;
+        }).length;
+    };
+
     return (
         <div className="min-h-screen bg-dark-900 text-gray-100 font-sans selection:bg-primary/30">
             {/* Top Bar */}
@@ -179,14 +210,14 @@ export default function MarketingDashboard() {
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }} className="glass-panel p-5 rounded-2xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-emerald-500/20"></div>
                         <h3 className="text-gray-400 text-xs font-medium mb-1 uppercase tracking-wider">Total Projects</h3>
-                        <div className="text-3xl font-bold text-white">{(allProjects || []).length}</div>
+                        <div className="text-3xl font-bold text-white">{(projects || []).length}</div>
                     </motion.div>
 
                     {/* Card 2: Total Clients */}
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="glass-panel p-5 rounded-2xl relative overflow-hidden group">
                         <div className="absolute top-0 right-0 w-20 h-20 bg-primary/20 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-primary/30"></div>
                         <h3 className="text-gray-400 text-xs font-medium mb-1 uppercase tracking-wider">Total Clients</h3>
-                        <div className="text-3xl font-bold text-white">{new Set((allProjects || []).map(p => p.client_name)).size}</div>
+                        <div className="text-3xl font-bold text-white">{new Set((projects || []).filter(p => p && p.client_name).map(p => p.client_name)).size}</div>
                     </motion.div>
 
                     {/* Card 3: Region Filter */}
@@ -195,7 +226,7 @@ export default function MarketingDashboard() {
                         <h3 className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">Region</h3>
                         <div className="flex flex-wrap gap-2">
                             {['Global', 'India'].map(region => {
-                                const count = (allProjects || []).filter(p => p.region === region).length;
+                                const count = getFilteredCount('region', region);
                                 return (
                                     <button
                                         key={region}
@@ -218,7 +249,7 @@ export default function MarketingDashboard() {
                         <h3 className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">Project From</h3>
                         <div className="flex flex-wrap gap-2">
                             {['New Client', 'Existing Client'].map(mode => {
-                                const count = (allProjects || []).filter(p => p.creation_mode === mode).length;
+                                const count = getFilteredCount('creation_mode', mode);
                                 return (
                                     <button
                                         key={mode}
@@ -240,22 +271,25 @@ export default function MarketingDashboard() {
                         <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/10 rounded-bl-full -mr-4 -mt-4 transition-all group-hover:bg-purple-500/20"></div>
                         <h3 className="text-gray-400 text-xs font-medium mb-2 uppercase tracking-wider">Brands</h3>
                         <div className="flex flex-wrap gap-2 max-h-20 overflow-y-auto custom-scrollbar">
-                            {Object.entries((allProjects || []).reduce((acc, p) => {
-                                const b = p.brand || "Unknown";
-                                acc[b] = (acc[b] || 0) + 1;
-                                return acc;
-                            }, {})).map(([brand, count]) => (
-                                <button
-                                    key={brand}
-                                    onClick={() => setFilterBrand(brand === filterBrand ? null : brand)}
-                                    className={`text-[10px] px-2 py-1 rounded border transition-all ${filterBrand === brand
-                                        ? "bg-purple-500 text-white border-purple-500 font-bold"
-                                        : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
-                                        }`}
-                                >
-                                    {brand}: {count}
-                                </button>
-                            ))}
+                            {/* Get unique brands from ALL projects, but count based on current filters */}
+                            {Array.from(new Set((allProjects || []).filter(p => p).map(p => p.brand || "Unknown"))).map(brand => {
+                                const count = getFilteredCount('brand', brand);
+                                // Only show brands that have at least 1 match in the current context (or are selected)
+                                if (count === 0 && filterBrand !== brand) return null;
+
+                                return (
+                                    <button
+                                        key={brand}
+                                        onClick={() => setFilterBrand(brand === filterBrand ? null : brand)}
+                                        className={`text-[10px] px-2 py-1 rounded border transition-all ${filterBrand === brand
+                                            ? "bg-purple-500 text-white border-purple-500 font-bold"
+                                            : "bg-white/5 text-gray-300 border-white/10 hover:bg-white/10"
+                                            }`}
+                                    >
+                                        {brand}: {count}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </motion.div>
                 </div>
