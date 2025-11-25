@@ -10,7 +10,17 @@ SQLALCHEMY_DATABASE_URL = os.getenv(
     "postgresql+psycopg2://postgres:postgres@localhost:5432/team_portal"
 )
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL)
+# Configure connection pooling to avoid "MaxClientsInSessionMode" errors
+# Supabase Transaction Pooler has a limit (e.g., 15-20 connections).
+# We limit our app to 10 connections + 10 overflow to stay safe.
+engine = create_engine(
+    SQLALCHEMY_DATABASE_URL,
+    pool_size=10,           # Keep 10 connections open
+    max_overflow=10,        # Allow 10 more if needed (total 20)
+    pool_timeout=30,        # Wait 30s for a connection before failing
+    pool_recycle=1800,      # Recycle connections every 30 mins
+    pool_pre_ping=True      # Check connection health before using
+)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
