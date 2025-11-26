@@ -40,7 +40,7 @@ export default function ProjectModal({ isOpen, onClose, project, onSave, mode = 
     };
 
     const miscInfoOptions = ["ID", "TS", "NX", "SP", "MK", "00"];
-    const brandOptions = ["PFX", "Milk", "Spectre", "Lola", "Tippet"];
+    const brandOptions = ["PFX", "Milk", "Spectre", "Lola", "Tippett"];
 
     useEffect(() => {
         if (project) {
