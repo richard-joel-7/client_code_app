@@ -89,7 +89,7 @@ export default function MarketingDashboard() {
     const handleSave = async (projectData) => {
         try {
             if (editingProject) {
-                await api.put(`/marketing/projects/${editingProject.project_id}`, projectData);
+                await api.put(`/marketing/projects/${editingProject.master_id}`, projectData);
             } else {
                 await api.post("/marketing/projects", projectData);
             }

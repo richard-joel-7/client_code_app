@@ -215,7 +215,12 @@ export default function ProjectModal({ isOpen, onClose, project, onSave, mode = 
             await onSave(payload);
             onClose();
         } catch (err) {
-            setError(err.response?.data?.detail || "Failed to save project");
+            const detail = err.response?.data?.detail;
+            if (typeof detail === 'object') {
+                setError(JSON.stringify(detail));
+            } else {
+                setError(detail || "Failed to save project");
+            }
         } finally {
             setLoading(false);
         }
