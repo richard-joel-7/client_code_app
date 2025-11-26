@@ -26,14 +26,39 @@ const TeamPlaceholder = ({ team }) => (
     </div>
 );
 
+import HubSelection from "./pages/HubSelection";
+import BusinessDashboard from "./pages/BusinessDashboard";
+
 function AppRoutes() {
     return (
         <Routes>
             <Route path="/login" element={<Login />} />
+
+            {/* Hub Selection (CEO Only) */}
+            <Route
+                path="/hub-selection"
+                element={
+                    <ProtectedRoute allowedRoles={["ceo"]}>
+                        <HubSelection />
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* Business Dashboard (CEO Only) */}
+            <Route
+                path="/business"
+                element={
+                    <ProtectedRoute allowedRoles={["ceo"]}>
+                        <BusinessDashboard />
+                    </ProtectedRoute>
+                }
+            />
+
+            {/* Marketing Dashboard (Marketing + CEO) */}
             <Route
                 path="/marketing"
                 element={
-                    <ProtectedRoute allowedRoles={["marketing"]}>
+                    <ProtectedRoute allowedRoles={["marketing", "ceo"]}>
                         <MarketingDashboard />
                     </ProtectedRoute>
                 }

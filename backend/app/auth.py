@@ -54,3 +54,13 @@ async def get_current_marketing_user(current_user: models.User = Depends(get_cur
     if current_user.role != "marketing":
         raise HTTPException(status_code=403, detail="Not authorized")
     return current_user
+
+async def get_current_marketing_or_ceo_user(current_user: models.User = Depends(get_current_user)):
+    if current_user.role not in ["marketing", "ceo"]:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    return current_user
+
+async def get_current_ceo_user(current_user: models.User = Depends(get_current_user)):
+    if current_user.role != "ceo":
+        raise HTTPException(status_code=403, detail="Not authorized. CEO access required.")
+    return current_user

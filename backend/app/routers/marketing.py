@@ -8,7 +8,7 @@ from io import BytesIO
 router = APIRouter(
     prefix="/api/marketing",
     tags=["marketing"],
-    dependencies=[Depends(auth.get_current_marketing_user)]
+    dependencies=[Depends(auth.get_current_marketing_or_ceo_user)]
 )
 
 @router.post("/projects", response_model=schemas.MasterResponse)

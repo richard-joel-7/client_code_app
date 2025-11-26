@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from . import models, database
-from .routers import auth, marketing
+from .routers import auth, marketing, business
 
 # Create tables (for simplicity in this demo, instead of just Alembic)
 models.Base.metadata.create_all(bind=database.engine)
@@ -26,6 +26,7 @@ app.add_middleware(
 
 app.include_router(auth.router)
 app.include_router(marketing.router)
+app.include_router(business.router)
 
 @app.get("/api/health")
 def health_check():

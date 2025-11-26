@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Boolean, Float, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from .database import Base
@@ -53,3 +53,39 @@ class Master(Base):
     created_by = Column(String, nullable=True)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
     updated_by = Column(String, nullable=True)
+
+class Business(Base):
+    __tablename__ = "business"
+
+    # Surrogate Key: MD5(Office + Client + Project + CloseDate)
+    surrogate_key = Column(String, primary_key=True, index=True)
+    
+    # Natural Key Components
+    office = Column(String, nullable=True)
+    client_name = Column(String, nullable=True)
+    project_name = Column(String, nullable=True)
+    close_date = Column(DateTime, nullable=True)
+
+    # Measures & Dimensions
+    region_type = Column(String, nullable=True)
+    territory = Column(String, nullable=True)
+    biz_poc = Column(String, nullable=True)
+    project_status = Column(String, nullable=True)
+    bidding = Column(Boolean, nullable=True)
+    winning_percent = Column(Float, nullable=True)
+    value = Column(Float, nullable=True)
+    profit_percent = Column(Float, nullable=True)
+    currency = Column(String, nullable=True)
+    amount_usd = Column(Float, nullable=True)
+    
+    # Quarterly Data (Explicit columns for easy aggregation)
+    q1 = Column(Float, default=0)
+    q2 = Column(Float, default=0)
+    q3 = Column(Float, default=0)
+    q4 = Column(Float, default=0)
+    
+    # Full JSON blob for flexible time-series
+    fy_data = Column(JSON, nullable=True)
+    
+    last_modified = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+

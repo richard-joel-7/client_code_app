@@ -22,6 +22,7 @@ export default function Login() {
         try {
             const role = await login(username, password);
             if (role === "marketing") navigate("/marketing");
+            else if (role === "ceo") navigate("/hub-selection");
             else if (role === "team2") navigate("/team2");
             else if (role === "team3") navigate("/team3");
             else navigate("/");
