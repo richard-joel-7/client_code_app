@@ -3,6 +3,7 @@ import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
+import { Select } from "../components/ui/Select";
 import ProjectModal from "../components/ProjectModal";
 import ClientTypeModal from "../components/ClientTypeModal";
 import api from "../lib/api";
@@ -23,6 +24,7 @@ export default function MarketingDashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingProject, setEditingProject] = useState(null);
     const [search, setSearch] = useState("");
+    const [searchField, setSearchField] = useState("client_name");
     const [filterBrand, setFilterBrand] = useState(null);
     const [filterRegion, setFilterRegion] = useState(null);
     const [filterCreationMode, setFilterCreationMode] = useState(null);
@@ -69,9 +71,26 @@ export default function MarketingDashboard() {
             const lowerSearch = search.toLowerCase();
             filtered = filtered.filter(p => {
                 if (!p) return false;
-                const nameMatch = p.client_name && typeof p.client_name === 'string' && p.client_name.toLowerCase().includes(lowerSearch);
-                const codeMatch = p.client_code && typeof p.client_code === 'string' && p.client_code.toLowerCase().includes(lowerSearch);
-                return nameMatch || codeMatch;
+
+                let fieldValue = "";
+                switch (searchField) {
+                    case "client_name":
+                        fieldValue = p.client_name;
+                        break;
+                    case "client_code":
+                        fieldValue = p.client_code;
+                        break;
+                    case "project_name":
+                        fieldValue = p.project_name;
+                        break;
+                    case "show_code":
+                        fieldValue = p.show_code;
+                        break;
+                    default:
+                        fieldValue = p.client_name;
+                }
+
+                return fieldValue && typeof fieldValue === 'string' && fieldValue.toLowerCase().includes(lowerSearch);
             });
         }
         if (filterBrand) filtered = filtered.filter(p => p && p.brand === filterBrand);
@@ -146,10 +165,25 @@ export default function MarketingDashboard() {
             // 1. Search Filter
             if (search) {
                 const lowerSearch = search.toLowerCase();
-                const nameMatch = p.client_name && typeof p.client_name === 'string' && p.client_name.toLowerCase().includes(lowerSearch);
-                const codeMatch = p.client_code && typeof p.client_code === 'string' && p.client_code.toLowerCase().includes(lowerSearch);
+                let fieldValue = "";
+                switch (searchField) {
+                    case "client_name":
+                        fieldValue = p.client_name;
+                        break;
+                    case "client_code":
+                        fieldValue = p.client_code;
+                        break;
+                    case "project_name":
+                        fieldValue = p.project_name;
+                        break;
+                    case "show_code":
+                        fieldValue = p.show_code;
+                        break;
+                    default:
+                        fieldValue = p.client_name;
+                }
 
-                if (!nameMatch && !codeMatch) return false;
+                if (!fieldValue || typeof fieldValue !== 'string' || !fieldValue.toLowerCase().includes(lowerSearch)) return false;
             }
 
             // 2. Apply all OTHER filters (skip the field we are currently counting for)
@@ -296,14 +330,29 @@ export default function MarketingDashboard() {
 
                 {/* Actions Bar */}
                 <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                    <div className="relative w-full md:w-96 group">
-                        <Search className="absolute left-4 top-3.5 h-5 w-5 text-gray-500 group-focus-within:text-primary transition-colors" />
-                        <Input
-                            placeholder="Search Client Name..."
-                            className="pl-12 bg-dark-800/50 border-white/5 focus:bg-dark-800"
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                        />
+                    <div className="flex flex-col md:flex-row gap-4 w-full md:w-auto items-center">
+                        <div className="w-full md:w-48">
+                            <Select
+                                options={[
+                                    { value: "client_name", label: "Client Name" },
+                                    { value: "client_code", label: "Client Code" },
+                                    { value: "project_name", label: "Project Name" },
+                                    { value: "show_code", label: "Show Code" }
+                                ]}
+                                value={searchField}
+                                onChange={(e) => setSearchField(e.target.value)}
+                                placeholder="Search Field"
+                            />
+                        </div>
+                        <div className="relative w-full md:w-96 group">
+                            <Search className="absolute left-4 top-3.5 h-5 w-5 text-gray-500 group-focus-within:text-primary transition-colors" />
+                            <Input
+                                placeholder="Search..."
+                                className="pl-12 bg-dark-800/50 border-white/5 focus:bg-dark-800 w-full"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                            />
+                        </div>
                     </div>
                     <div className="flex gap-3 w-full md:w-auto">
                         <Button variant="secondary" onClick={handleExport} className="shadow-none bg-dark-800 hover:bg-dark-700 border-white/5">

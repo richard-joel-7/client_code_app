@@ -17,7 +17,7 @@ export function Select({ label, options, value, onChange, placeholder = "Select 
     }, []);
 
     const handleSelect = (optionValue) => {
-        onChange({ target: { name: label.toLowerCase(), value: optionValue } });
+        onChange({ target: { name: label ? label.toLowerCase() : 'select', value: optionValue } });
         setIsOpen(false);
     };
 
